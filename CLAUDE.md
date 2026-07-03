@@ -6,6 +6,8 @@ Everything in this file is part of Superboost v5.0. It activates when the Sessio
 
 **What v5 is:** v4's philosophy — *enforce with hooks, don't narrate with ceremony; lean on the native harness (Workflow tool, agent teams) over hand-rolled orchestration* — retuned for **Claude Fable 5** as the default model, plus two new capabilities: **RAM-scaled parallelism** (size fan-out to free memory, §10) and a **colored terminal FX layer** (§11). The default model is `fable[1m]` with an `availableModels` allowlist, so if Fable 5 isn't accessible Claude Code degrades to Opus 4.8 with a warning rather than failing.
 
+**Prerequisites (verified):** Fable 5 needs **Claude Code ≥ v2.1.170** (older versions can't show or select it — `claude update`), is **never an account default** (you opt in via the `model` setting, `/model fable`, or the **`best`** alias = "Fable 5 where the org has access, else the latest Opus" — `best` is the cleanest graceful-degradation selector if you'd rather not pin `fable`), and is **not available under zero data retention (ZDR)**. If any of these don't hold, the `availableModels` allowlist quietly falls back to Opus.
+
 ---
 
 ## 1. Boot check (silent)
@@ -98,9 +100,9 @@ Fable 5 behaves differently from the Opus family. These are the levers that matt
 - **State the objective + the *Why*, not step-by-step scripts.** Fable 5 generalizes from goals and over-prescriptive prompts *reduce* its quality. Give the outcome, the reason behind it, and the boundaries — then let it plan.
 - **No unrequested tidying at high effort.** At `xhigh` it may refactor/add helpers/over-handle errors beyond the ask. When you want a minimal change, say so: "do the simplest thing that satisfies the goal; no refactors, helpers, or speculative error-handling."
 - **Ground progress claims in tool results.** Before reporting something done, point to actual tool output. Don't claim a test passes without the run; if a step was skipped, say so.
-- **Verify with fresh eyes.** For long builds, spin up a fresh-context verifier sub-agent to audit against the spec/tests rather than self-critiquing — self-critique loops.
+- **Verify with fresh eyes — but only where it earns its cost.** Fable 5 self-verifies routine work with little prompting, so skip "remember to test" reminders on normal tasks. For **long or high-risk builds**, spin up a fresh-context verifier sub-agent to audit against the spec/tests rather than self-critiquing — self-critique loops.
 - **Memory surface.** Persist lessons to the file-memory at `~/.claude/projects/-Users-godyduinsbergen/memory/` (one fact per file, index in MEMORY.md) — Fable 5 works better when it can write and re-consult notes.
-- **Refusals are a known mode, not a bug.** Fable 5 runs a cyber/bio safety classifier that can return `stop_reason: "refusal"` on adjacent-but-benign security/life-sciences work. Claude Code ships built-in **Opus 4.8 fallback**, so a refused turn is typically re-served automatically — if you see a refusal, note it and proceed; don't treat it as a failure or retry blindly.
+- **Refusals are a known mode, not a bug.** Fable 5 runs safety classifiers (categories include `cyber`, `bio`, `reasoning_extraction`, `frontier_llm`, `null`) that return `stop_reason: "refusal"` as a normal HTTP 200 — often on adjacent-but-benign security/life-sciences work. In Claude Code a flagged cyber/bio turn is **auto-re-run on the default Opus** (Opus 4.8 on the Anthropic API/gateways; Opus 4.7 on AWS) with a transcript notice; in non-interactive/SDK contexts the turn just ends with the refusal. So: if you see a refusal, note it and proceed — don't treat it as a failure or retry blindly. (`reasoning_extraction` fires when a prompt asks the model to reproduce its own internal reasoning in the output — ask for a structured answer instead.)
 
 ---
 

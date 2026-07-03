@@ -12,6 +12,15 @@ A personal operating layer for [Claude Code](https://claude.com/claude-code) by 
 - **Colored terminal FX** (`superboost-fx.sh` + statusline): notable actions light up as a decaying, pulsing colored segment (fan-out=cyan, commit=green, deploy=indigo, edit=amber, research=violet, block=red) — plus a manual `emit` so any skill/step can trigger an effect (e.g. `emit preflight`). Writes state only, prints nothing → zero context pollution.
 - **Colorized statusline** with a RAM gradient bar and colored model/capacity/cost — using **ANSI SGR only, no wide glyphs**, so the TUI width calc stays exact (v4's hard-won lesson). `SUPERBOOST_STATUSLINE_PLAIN=1` reverts to pure ASCII.
 
+## Fable 5 quick reference (verified — see `superboost-expertise-report.md`)
+
+- **Needs Claude Code ≥ v2.1.170** (`claude update`), is **never an account default**, and is **not available under ZDR**. Select via the `model` setting, `/model fable`, or the `best` alias (Fable where available, else latest Opus).
+- **Always-on adaptive thinking** — no manual budget; depth is the **effort** knob (`low…max`, default `high`). `MAX_THINKING_TOKENS`, `alwaysThinkingEnabled`, `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING` have no effect on Fable 5.
+- **Refusals** = normal HTTP 200 `stop_reason:"refusal"` (categories `cyber`/`bio`/`reasoning_extraction`/`frontier_llm`/`null`); Claude Code auto-re-runs flagged cyber/bio on Opus 4.8 (Opus 4.7 on AWS).
+- **Keys:** `Meta+T` thinking · `Meta+P` model picker · `Meta+O` fast mode; in the picker `←/→` = effort, `s` = this session only.
+
+The full cited brief — architecture, safety machinery, prompting guidance, and how each finding maps to a v5 change — is in [`superboost-expertise-report.md`](./superboost-expertise-report.md) (25/25 claims verified 3-0 against first-party Anthropic docs).
+
 ## What's in here
 
 | File | Role |
