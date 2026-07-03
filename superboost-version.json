@@ -37,6 +37,7 @@
     "explorer": "haiku"
   },
   "v5_2_changes": [
+    "v5.2.2 DISPLAY HYGIENE (2026-07-03, user screenshot): the 5h rate chip rendered raw harness float noise ('5h 7.000000000000001%') — ctx/5h percentages are now rounded to 1 decimal inside the single jq pass (try/catch keeps the '-' sentinel for missing values; 42.5 keeps its meaningful decimal).",
     "v5.2.2 WASH VISIBILITY (2026-07-03, user screenshot-verified): the FX wash was too timid to act as visual confirmation \u2014 the pure g^1.5 spatial falloff left the far half of a wide (~250-col) canvas black even at full strength, and the smoothstep decay was near-black by mid-life while the label chip stayed lit to TTL, so a COMMIT glanced at t+5s read as 'label, no confirmation'. Fixes: (1) FLOORED falloff base=0.35+0.65*g^1.5 \u2014 every canvas cell participates; (2) HOLD-then-ease decay \u2014 full strength for the first 35% of TTL, then smoothstep to 0 at TTL (still strictly falling); (3) alpha levels 18/36/56/80 -> 20/40/62/82. Measured (COLUMNS=250): lit fraction 100% at 0-2s (was: left 2/3 black), 80% at 4s, 55% at 5s (was: black), 0 by TTL. deepcap grew a full-canvas-coverage check (min lit fraction over ages<2s >= 90%). DEEPCAP + verify.sh ALL PASS after.",
     "v5.2.1 REBRAND (2026-07-03, user-requested): the product is now HYVES CODE V5 \u2014 GitHub repo renamed superboost-v5 -> hyves-code (old URLs redirect), README/CLAUDE.md/installer/boot-cinema link rebranded, context sentinel changed to 'HYVES CODE V5 ACTIVE' (CLAUDE.md accepts the old sentinel for pre-rebrand sessions). Internal script filenames, SUPERBOOST_* env vars, and settings.json wiring are UNCHANGED \u2014 upgrade is a git pull, no rewiring. Plus a visible BOOT MARK: the SessionStart hook now supplies a two-line HYVES CODE banner (self-test, RAM, health, fan-out posture) that the model opens its first reply with \u2014 the boot cinema itself stays installer-only (hook stdout is model context and can never paint the terminal).",
     "v5.2.1 REGRESSION PASS (2026-07-03, frame-capture verified): (1) FX CANVAS FLOOR \u2014 the v5.2 density chips left a 9-cell wash canvas at COLUMNS=150, so scanner/sweep motion read as mush (the Gaussian head, sigma>=2, was as wide as the stage); the statusline now guarantees an 18-cell FX stage STATICALLY \u2014 shrink RAM bar, then shed churn, then dir \u2014 independent of FX state so the layout never shifts mid-effect. (2) FLOAT EMIT EPOCH \u2014 fx.sh wrote integer `date +%s`, starting every animation phase up to 1s late (the commit sweep began mid-canvas with up to 1/3 of its travel gone); it now writes a perl Time::HiRes float (integer fallback) and the statusline gates on the whole-second part. (3) Ambient glow dims 45%->35% while a scanner/sweep head travels, so the head reads crisply. Measured after: sweep monotonic 1-3-7-10-13-16-18-20 across 3s; scanner full-range bounce 1->21->1, moved 11/11 frames, coverage 0.83-0.92, zero freezes; decay 7.0 -> 2.9 -> 0.0 with 0.0 energy past TTL; width exactly COLUMNS-5 in all 66 frames; render ~57ms (target <80ms).",
@@ -81,13 +82,13 @@
     "FIX: removed dead Fast-Mode logic; gitnexus-refresh cwd-guarded, no auto-exec; ram-monitor rotates its log",
     "Model tiering alias-only; config is a git repo"
   ],
-  "blessed_at": "2026-07-03T05:32:17Z",
+  "blessed_at": "2026-07-03T05:40:01Z",
   "scripts": {
     "resource-check.sh": "87b926d9f8f7f5fa711da707eb4196c16bcbb39c12fe070fdebfe770b5e20df1",
     "ram-monitor.sh": "fe81960686b85d6ee1c8eb768ffdb81caf18e1704f34cb4faaa5dfeeb4939b17",
     "resource-guard.sh": "65157c80f117e7b716322ee7516a41656a4a89a7db914ca41f9def29dd54865e",
     "superboost-banner.sh": "bbc5663c827a84ffaab6f2a70e0ef3aa23e8bbd3229ce68241a1224bc9a61489",
-    "superboost-statusline.sh": "d1860c31f9e0270f6a317c0eae310d5d0f1a34059bdaf4ab6b3f2bccc3f4636d",
+    "superboost-statusline.sh": "eddbf2af84bd6c54f8b39fd0be2677808197697fac1b01832e3bf2f557f571d2",
     "bless-hooks.sh": "fac9d04bc8019be52733730aa1117168c81b1af93694ed10c96f5be930cce6c9",
     "safety-guard.sh": "06789953a610e915479fee597b313810ea0f012b101c98f2c1bbe00087d4afc0",
     "gitnexus-refresh.sh": "c6c6e9668972b5f3ab0a6a1e0a55a98d8d5d4e1b89c7e2560c6a231072b631e2",

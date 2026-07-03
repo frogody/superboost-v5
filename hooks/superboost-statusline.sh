@@ -38,12 +38,15 @@ if [ "$PLAIN" != "1" ]; then
 fi
 
 # --- Session JSON -> fields (single jq pass; tab-separated) ---
+# v5.2.2: percentages rounded to 1 decimal in jq — the harness can emit float
+# noise like 7.000000000000001, which rendered verbatim in the 5h chip; a
+# missing/non-numeric value still yields the "-" sentinel via try/catch
 IFS=$'\t' read -r MODEL COST CTX RLIM EFFORT ADDED REMOVED CWD BIG <<EOF
 $(echo "$INPUT" | jq -r '[
   (.model.display_name // "?"),
   (.cost.total_cost_usd // 0),
-  (.context_window.used_percentage // "-"),
-  (.rate_limits.five_hour.used_percentage // "-"),
+  (try (((.context_window.used_percentage * 10) | round) / 10) catch "-"),
+  (try (((.rate_limits.five_hour.used_percentage * 10) | round) / 10) catch "-"),
   (.effort.level // "-"),
   (.cost.total_lines_added // 0),
   (.cost.total_lines_removed // 0),
