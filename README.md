@@ -73,8 +73,11 @@ Superboost lives in `~/.claude`, which Claude Code already reads. Clone it there
 ```bash
 # back up an existing config first if you have one
 git clone https://github.com/frogody/superboost-v5.git ~/.claude
-claude          # boots "SUPERBOOST V5 ACTIVE", colorized HUD, Fable 5 default
+~/.claude/install.sh   # verify prereqs, bless checksums, self-test — ends with the HYVES boot cinema
+claude                 # boots "SUPERBOOST V5 ACTIVE", colorized HUD, Fable 5 default
 ```
+
+`install.sh` is idempotent (re-run it any time) and works from a checkout anywhere — run from outside `~/.claude` it backs up your existing `CLAUDE.md` / `settings.json` to a timestamped folder before copying the new ones in.
 
 Requires **Claude Code ≥ 2.1.170** (for Fable 5) — run `claude update` if needed. On boot you'll see a one‑line health check and your parallelism budget; if anything's misconfigured, it tells you. Useful commands:
 
@@ -83,6 +86,7 @@ Requires **Claude Code ≥ 2.1.170** (for Fable 5) — run `claude update` if ne
 ~/.claude/hooks/superboost-fx.sh emit preflight     # trigger a status-bar effect
 ~/.claude/hooks/superboost-banner.sh                # run the install self-test
 ~/.claude/hooks/bless-hooks.sh                      # re-seal checksums after editing a hook
+~/.claude/hooks/hyves-boot.sh                       # replay the HYVES CODE boot cinema
 ```
 
 ---

@@ -11,6 +11,7 @@
 !/superboost-version.json
 !/superboost-expertise-report.md
 !/keybindings.json
+!/install.sh
 !/hooks
 !/commands
 # NOTE: /agents is intentionally NOT versioned — those are project-specific
