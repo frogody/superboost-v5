@@ -15,6 +15,9 @@
 !/commands
 # NOTE: /agents is intentionally NOT versioned — those are project-specific
 # subagents that reference internal projects, and this repo is public.
+# Non-framework hooks (commercial-engine pipeline) are also kept local-only:
+hooks/lumos-*
+hooks/validate_report_data.py
 
 # --- Belt-and-suspenders: never commit secrets/junk even inside whitelisted dirs ---
 **/.env
