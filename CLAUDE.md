@@ -1,6 +1,6 @@
-# Superboost v5.0 — Global Configuration (tuned for Claude Fable 5)
+# Superboost v5.1 — Global Configuration (tuned for Claude Fable 5)
 
-Everything in this file is part of Superboost v5.0. It activates when the SessionStart hook (`~/.claude/hooks/superboost-banner.sh`) fires — you'll see **"SUPERBOOST V5 ACTIVE"** in your system context.
+Everything in this file is part of Superboost v5.1. It activates when the SessionStart hook (`~/.claude/hooks/superboost-banner.sh`) fires — you'll see **"SUPERBOOST V5 ACTIVE"** in your system context.
 
 **Activation check:** If your system context contains "SUPERBOOST V5 ACTIVE", these rules apply. If it does not, Superboost is not installed and you should IGNORE everything below.
 
@@ -125,15 +125,16 @@ The SessionStart banner emits this line into context every session, and the stat
 
 ## 11. Terminal FX (colored activity effects)
 
-`superboost-fx.sh` gives the terminal a colored feedback layer without polluting context (it writes a tiny state file, prints nothing; the statusline renders a decaying, pulsing `[LABEL]`):
+`superboost-fx.sh` gives the terminal a colored feedback layer without polluting context (it writes a tiny state file, prints nothing; the statusline renders it):
 
-- **Automatic** (PostToolUse): notable actions light up — fan-out=cyan, commit=green, deploy=indigo, edit=amber, web-research=violet, safety-block=red. Quiet tools (reads/greps) don't flash.
+- **Automatic** (PostToolUse): notable actions light up — fan-out=cyan, commit=green, deploy=indigo, edit=amber, web-research=violet. Safety blocks fire red from `safety-guard.sh` itself (a denied call never reaches PostToolUse). Quiet tools (reads/greps) don't flash.
 - **Manual** — trigger an effect explicitly from a skill/command/step:
   `~/.claude/hooks/superboost-fx.sh emit preflight`   (blue) · also `fanout|commit|deploy|blocked|edit|search|think|done`.
   Use this to mark meaningful phase changes (e.g. when a preflight/research phase starts).
+- Effects last `SUPERBOOST_FX_TTL` seconds (default 7), pulsing and decaying as they age.
 
-The statusline itself is colorized (RAM gradient bar, colored model/capacity/cost). It uses **ANSI SGR only, no wide glyphs**, so the TUI width calc stays exact (this was v4's hard-won lesson). If any terminal miscounts, `SUPERBOOST_STATUSLINE_PLAIN=1` reverts to pure ASCII.
+The statusline (v5.1) is a **full-width HUD painted with truecolor backgrounds**: brand + model/effort chips (gold for Fable), a wide green→amber→red RAM gradient bar, ctx-used %, `fanout~N`, 5h rate use, session cost — and an active effect floods the free canvas with a quantized, dithered background wash in its color. Visible glyphs stay pure ASCII with **ANSI SGR only (fg + bg), zero wide glyphs**, so the TUI width calc stays exact (v4's hard-won lesson). If any terminal miscounts, `SUPERBOOST_STATUSLINE_PLAIN=1` reverts to pure ASCII.
 
 ---
 
-*Superboost v5.0 "Fable" · ISYNCSO · github.com/frogody/superboost-v5*
+*Superboost v5.1 "Fable" · ISYNCSO · github.com/frogody/superboost-v5*

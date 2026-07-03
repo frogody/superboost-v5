@@ -1,6 +1,6 @@
-# Superboost v5.0 "Fable"
+# Superboost v5.1 "Fable"
 
-![version](https://img.shields.io/badge/version-5.0%20%22Fable%22-a855f7)
+![version](https://img.shields.io/badge/version-5.1%20%22Fable%22-a855f7)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.170-22d3ee)
 ![tuned for](https://img.shields.io/badge/tuned%20for-Claude%20Fable%205-facc15)
 ![safety](https://img.shields.io/badge/auto--mode-guarded-22c55e)
@@ -37,7 +37,7 @@ Superboost reads your live RAM and converts it into an **actionable fan‑out bu
 Auto‑mode (no permission prompts) is fast but risky. Superboost makes it safe with a real `PreToolUse` **deny hook** that blocks the catastrophic cases — `rm -rf` of `/` or `$HOME`, disk formatting, fork bombs, `git push --force`, secret exfiltration over the network, and edits to files you've locked — while deliberately allowing ordinary `git push`, deploys, and SQL. It's a guardrail the model *cannot* talk its way past, so you get the speed of auto‑mode without the exposure.
 
 ### A terminal you enjoy looking at
-The status bar is a **colorized HUD**: a green→amber→red RAM gradient, your fan‑out capacity, cost, and the model name in gold when you're on Fable. Notable actions **light up** as a decaying, pulsing effect — fan‑out is cyan, commits green, deploys indigo, edits amber, web research violet, safety blocks red — so you can feel what Claude is doing at a glance. It's all done with zero‑width ANSI color and no wide glyphs, so it never corrupts the terminal layout (a hard‑won lesson), and `SUPERBOOST_STATUSLINE_PLAIN=1` reverts to pure ASCII if you ever want it.
+The status bar is a **full‑width HUD painted with truecolor backgrounds** (new in 5.1): a violet brand chip, the model + effort level on a gold chip when you're on Fable, a wide green→amber→red RAM gradient bar, context‑window use, your fan‑out capacity, 5‑hour rate use, and session cost — edge to edge. Notable actions **flood the bar** with a quantized, dithered background wash in the action's color that pulses and decays — fan‑out is cyan, commits green, deploys indigo, edits amber, web research violet, and safety blocks fire red *from the guard itself*, so even a denied action is visible. Washes last `SUPERBOOST_FX_TTL` seconds (default 7). It's all done with zero‑width ANSI color on plain‑ASCII glyphs, so it never corrupts the terminal layout (a hard‑won lesson), and `SUPERBOOST_STATUSLINE_PLAIN=1` reverts to pure ASCII if you ever want it. (One macOS quirk: if the terminal window is fully covered, App Nap pauses redraws, so short‑lived washes can pass unseen — they resume the moment the window is visible.)
 
 ### Smart model tiering — pay for judgment, not grep
 Superboost's guidance tiers work across models: `fable` for orchestration, synthesis, and judgment; `sonnet` for implementation; `haiku` for cheap read‑only exploration. Cheap explorers + Sonnet workers + one Fable synthesizer gets you near‑frontier quality at a fraction of an all‑Fable bill — and it keeps the expensive model off mechanical work.
@@ -87,6 +87,16 @@ Requires **Claude Code ≥ 2.1.170** (for Fable 5) — run `claude update` if ne
 
 ---
 
+## What's new in v5.1
+
+- **Full‑width statusline** — the HUD now claims the entire terminal width with truecolor *background* chips and a wide RAM gradient bar, plus new context‑used %, effort‑level, and 5‑hour‑rate readouts.
+- **FX background washes** — effects flood the bar with a blocky, dithered, pulsing color wash instead of a small colored label; duration tunable via `SUPERBOOST_FX_TTL`.
+- **Safety blocks are now visible** — `safety-guard.sh` fires the red BLOCKED wash itself when it denies an action (previously documented but unwired: a denied call never reaches PostToolUse).
+- **Deploy effect false‑positive fix** — the indigo deploy wash now requires a real deploy (platform CLI, `git push`, or a deploy script/task in command position), not just the word "deploy" anywhere in a command.
+- **Narrow terminals** — the bar degrades to a hard‑truncated compact line instead of wrapping in slim panes.
+
+---
+
 ## What's in the box
 
 | File | Role |
@@ -95,7 +105,7 @@ Requires **Claude Code ≥ 2.1.170** (for Fable 5) — run `claude update` if ne
 | `settings.json` | Wires the hooks, sets `model: fable[1m]` + the fallback allowlist, and turns on guarded auto‑mode. |
 | `hooks/superboost-parallelism.sh` | Turns the RAM probe into an actionable fan‑out budget. |
 | `hooks/superboost-fx.sh` | Terminal FX emitter — colors the status bar on notable actions (and via manual `emit`). |
-| `hooks/superboost-statusline.sh` | The colorized HUD (RAM gradient, capacity, model, cost, live FX). |
+| `hooks/superboost-statusline.sh` | The full‑width HUD (bg chips, RAM gradient bar, ctx %, capacity, rate, cost, live FX washes). |
 | `hooks/safety-guard.sh` | The deny hook that makes auto‑mode safe. |
 | `hooks/resource-guard.sh` · `resource-check.sh` · `ram-monitor.sh` | Live resource probing + spawn throttling. |
 | `hooks/superboost-banner.sh` | SessionStart self‑test + budget emit (silent unless something's wrong). |

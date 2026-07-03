@@ -142,7 +142,8 @@ FIXED=$(( ${#BRAND_TXT} + ${#MODEL_TXT} + ${#RAM_LBL} + RB + ${#STATS_TXT} \
         + ${#CTX_TXT} + ${#CAP_TXT} + ${#FXL_TXT} + ${#RL_TXT} + ${#COST_TXT} ))
 CANVAS=$(( W - FIXED ))
 if [ "$CANVAS" -lt 6 ]; then RB=10; FIXED=$(( FIXED - (W*12/100) + 10 )); CANVAS=$(( W - FIXED )); fi
-if [ "$CANVAS" -lt 0 ]; then plain_line; exit 0; fi
+# too narrow for the full layout: compact line, hard-truncated so it can't wrap
+if [ "$CANVAS" -lt 0 ]; then plain_line | cut -c1-"$W"; exit 0; fi
 
 # --- RAM bar: bg-colored cell gradient; filled bright, unfilled dark ghost ---
 RAMBAR=$(awk -v n="$RB" -v used="$USED_PCT" 'BEGIN{

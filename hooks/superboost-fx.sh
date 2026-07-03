@@ -102,7 +102,14 @@ if tool in ("Write", "Edit", "MultiEdit", "NotebookEdit"):
 
 # Bash: distinguish deploy / push vs commit vs nothing
 if tool == "Bash" and cmd:
-    if re.search(r"\bgit\s+push\b", cmd) or re.search(r"\b(vercel|supabase)\b.*\bdeploy\b", cmd) or re.search(r"\bdeploy\b", cmd):
+    # Deploy = platform CLI, git push, a deploy script/task in COMMAND position,
+    # or a package-manager deploy task. A bare \bdeploy\b used to false-fire on
+    # any mention of the word (filenames, grep patterns, prose in echo).
+    if re.search(r"\bgit\s+push\b", cmd) \
+       or re.search(r"\b(vercel|supabase|netlify|railway|flyctl|firebase|wrangler|gcloud|aws|az|cdk|kubectl|helm)\b[^\n]*\bdeploy\b", cmd) \
+       or re.search(r"\b(npm|pnpm|yarn|bun)\s+(run\s+)?deploy\b", cmd) \
+       or re.search(r"\bmake\s+deploy\b", cmd) \
+       or re.search(r"(^|[;&|])\s*(\S*/)?deploy(\.\w+)?(\s|$)", cmd):
         print("deploy"); raise SystemExit(0)
     if re.search(r"\bgit\s+commit\b", cmd):
         print("commit"); raise SystemExit(0)

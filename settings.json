@@ -6,7 +6,11 @@
     "defaultMode": "auto"
   },
   "model": "fable[1m]",
-  "availableModels": ["fable", "opus", "sonnet"],
+  "availableModels": [
+    "fable",
+    "opus",
+    "sonnet"
+  ],
   "hooks": {
     "PreToolUse": [
       {
