@@ -54,7 +54,7 @@
     "FIX: removed dead Fast-Mode logic; gitnexus-refresh cwd-guarded, no auto-exec; ram-monitor rotates its log",
     "Model tiering alias-only; config is a git repo"
   ],
-  "blessed_at": "2026-07-03T02:17:58Z",
+  "blessed_at": "2026-07-03T02:23:09Z",
   "scripts": {
     "resource-check.sh": "87b926d9f8f7f5fa711da707eb4196c16bcbb39c12fe070fdebfe770b5e20df1",
     "ram-monitor.sh": "fe81960686b85d6ee1c8eb768ffdb81caf18e1704f34cb4faaa5dfeeb4939b17",
@@ -62,7 +62,7 @@
     "superboost-banner.sh": "5f280112f9a35a25f0972d1c92831ece6cd469515b59477638c3e403db0ebc0a",
     "superboost-statusline.sh": "9377267e0162ad4c064c0e5684911c1909db288e283e9714f70c399e4b1c53f5",
     "bless-hooks.sh": "e2d258fafe46e7dc5a007cb782b9fcc4c20292c6bc14caf28982f94f937e0e8d",
-    "safety-guard.sh": "4bc4d1bd308e123e240154801880d5415ae3f737ccbbd152b5056bd603fd54ac",
+    "safety-guard.sh": "59d4c08d59b80adc2f740fdabb739c30c231a8e4d95fdc37cb0fa6a0a53e05e4",
     "gitnexus-refresh.sh": "c6c6e9668972b5f3ab0a6a1e0a55a98d8d5d4e1b89c7e2560c6a231072b631e2",
     "superboost-secrets.sh": "0f55ea52c38d5534f65c2ffde51efc32c3f1bfe6da4aa2ededf3f27dfe9c7d34",
     "superboost-fx.sh": "13c1ebe89b9f7f7219e30001afa858db0d4bb84a21c281a6d577952565843826",

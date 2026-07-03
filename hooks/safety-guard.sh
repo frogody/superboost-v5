@@ -92,3 +92,11 @@ if tool in ("Write", "Edit", "MultiEdit"):
 
 sys.exit(0)
 PY
+rc=$?
+# On a block (exit 2), auto-fire the red BLOCKED effect in the statusline.
+# PostToolUse never runs for a denied call, so this is the only place it can fire.
+# (Added with explicit user authorization, 2026-07-03.)
+if [ "$rc" -eq 2 ]; then
+  "$HOME/.claude/hooks/superboost-fx.sh" emit blocked 2>/dev/null
+fi
+exit "$rc"
