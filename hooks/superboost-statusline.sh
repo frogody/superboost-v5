@@ -17,8 +17,8 @@
 #   bar is calm; color is the exception that carries the signal.
 #
 #   HUE FAMILIES (one family = one meaning, everywhere):
-#     violet+gold IDENTITY (brand chip solid; model chip = identity hue as
-#                 TEXT on a dark chip) — never status
+#     violet+gold IDENTITY (brand + model as bold TEXT on the base strip;
+#                 v5.4.3: no solid identity slabs) — never status
 #     green       CONFIRMED EVENTS (commit, pass; churn + is desaturated data)
 #     amber       CAUTION/CHANGE   (RAM>=75, ctx>=60, tight budget, 7d>=70,
 #                                   edit, compact)
@@ -32,9 +32,10 @@
 #     slate       NEUTRAL/HEALTHY  (all readouts at rest, dir, 5h, cost, done,
 #                                   RAM bar fill, idle heartbeat)
 #
-#   EMPHASIS TIERS (exactly three): SOLID chip (bg+bold: brand + urgent
-#   alerts + FX label) > TINTED readout (colored fg on the dark base strip) >
-#   DIM context (dir). Every chip pads one space each side.
+#   EMPHASIS TIERS (exactly three): SOLID chip (bg+bold: urgent alerts + FX
+#   label ONLY — solid means "act now") > TINTED text on the base strip
+#   (identity bold, readouts regular) > DIM context (dir). Every chip pads
+#   one space each side.
 #
 #   LIFECYCLE: the ACTIVITY canvas always says what the process is doing —
 #   an event wash while fresh, a faint drifting slate heartbeat while a turn
@@ -396,14 +397,16 @@ else
 fi
 
 # --- Chips ---
-# v5.4.1 quiet: ONE solid anchor (the brand chip, deepened off-neon violet);
-# the model chip keeps its identity hue in the TEXT on a dark chip instead of
-# a solid slab — same meaning, a tenth of the paint
-BRAND="$(b 91 33 182)$(c 237 233 254)${BOLD}${BRAND_TXT}${RST}"
+# v5.4.3 (user screenshot): identity had the last two solid slabs on an
+# otherwise seamless strip and read as out of style. Identity is now TEXT on
+# the shared base strip — violet brand, gold Fable / violet Opus — bold is its
+# only emphasis. SOLID backgrounds are reserved for exactly two things:
+# urgent alerts (200K+, ctx>=85) and the FX label. Solid = "act now".
+BRAND="${BG0}$(c 196 181 253)${BOLD}${BRAND_TXT}${RST}"
 case "$MODEL" in
-  *[Ff]able*) MODEL_CHIP="$(b 35 32 18)$(c 250 204 21)${BOLD}${MODEL_TXT}${RST}" ;;
-  *[Oo]pus*)  MODEL_CHIP="$(b 30 26 44)$(c 167 139 250)${BOLD}${MODEL_TXT}${RST}" ;;
-  *)          MODEL_CHIP="$(b 40 44 54)$(c 226 232 240)${BOLD}${MODEL_TXT}${RST}" ;;
+  *[Ff]able*) MODEL_CHIP="${BG0}$(c 250 204 21)${BOLD}${MODEL_TXT}${RST}" ;;
+  *[Oo]pus*)  MODEL_CHIP="${BG0}$(c 167 139 250)${BOLD}${MODEL_TXT}${RST}" ;;
+  *)          MODEL_CHIP="${BG0}$(c 226 232 240)${BOLD}${MODEL_TXT}${RST}" ;;
 esac
 # readouts are neutral while healthy; amber/red only under pressure
 if   [ "$USED_PCT" -ge 85 ]; then ST_R=239; ST_G=68;  ST_B=68

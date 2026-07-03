@@ -1,8 +1,8 @@
 {
-  "version": "5.4.2",
+  "version": "5.4.3",
   "codename": "Radar",
   "installed_at": "2026-03-08T17:00:00Z",
-  "upgraded_at": "2026-07-03T11:00:00Z",
+  "upgraded_at": "2026-07-03T11:45:00Z",
   "source_path": "/Users/godyduinsbergen/.claude/hooks",
   "project_path": "/Users/godyduinsbergen",
   "repo": "github.com/frogody/hyves-code",
@@ -37,6 +37,7 @@
     "explorer": "haiku"
   },
   "v5_4_changes": [
+    "v5.4.3 IDENTITY OFF THE SLAB (user screenshot: the HYVES CODE + Fable chips were 'completely out of style'): identity is now bold TEXT on the shared base strip (brand violet #c4b5fd, Fable gold, Opus violet) \u2014 the last two solid slabs are gone. SOLID backgrounds now mean exactly one thing, 'act now': the 200K+/ctx>=85 alerts and the live FX label. Verified: a healthy idle bar contains ZERO solid chips (only base/ghost/fill strip colors); verify.sh 79 -> 81 checks (no-solid-identity + brand-violet-text).",
     "v5.4.2 FX INTENSITY DIAL (user-requested follow-up to 5.4.1 Quiet): SUPERBOOST_FX_INTENSITY = normal (v5.2.2 punchy alpha 20/40/62/82, base tint 14%, heartbeat 14%) | low (10/18/28/38, tint 7%, heartbeat 8% \u2014 same full-canvas coverage at ~half the luminance, measured wash energy 0.48x) | off (no canvas wash, no heartbeat, no base tint; the FX label chip still names the event). Unknown values fall back to normal. Pinned by a frame-measured verify check (dial.py: normal lights / low <0.7x / off zero + label + width law / junk value = normal).",
     "v5.4.1 QUIET (user feedback: 'looks like a circus'): the steady-state bar is now calm \u2014 QUIET BY DEFAULT is the first law of the grammar (\u00a711). A healthy value renders NEUTRAL slate; hue appears only at attention thresholds or on events. Concretely: RAM bar dropped the always-on green->amber->red positional gradient for a single state-chosen hue (slate / amber >=75 / red >=85, dark ghost); RAM stats + ctx + fanout~N readouts neutral until pressure (fanout colored only when tight/solo); churn desaturated (data, not status); model chip = identity hue as TEXT on a dark chip instead of a solid gold slab; brand violet deepened off-neon (#7c3aed -> #5b21b6). Washes/alerts unchanged \u2014 events and 200K+/ctx>=85 chips are where color lives. Measured: 28 -> 11 distinct SGR colors in the steady-state render at COLUMNS=150. verify.sh 75 -> 78 checks (neutral ctx readout, single-hue bar, neutral fanout, gold-text-not-slab).",
     "v5.4.0 ATTENTION PUSHES: native macOS notifications for the two moments the terminal itself cannot carry \u2014 'Claude needs you' (Notification hook: permission_prompt/idle_prompt/agent_needs_input/elicitation_dialog, with the CC message + project dir in the body) and 'Claude finished' when a turn ran past SUPERBOOST_PUSH_LONG_TURN_SEC (45s; `emit turn` stamps turnstart.<sid8>, `emit done` consumes it). The pink attn wash is invisible when the window is occluded (App Nap pauses renders) \u2014 which is exactly when the user needs the shoulder-tap. Gates in order: SUPERBOOST_PUSH=0 opt-out; 90s rate limit (SUPERBOOST_PUSH_MIN_GAP); SUPERBOOST_PUSH_DRYRUN=1 records intent for tests; frontmost-terminal suppression via lsappinfo (SUPERBOOST_PUSH=2 forces); macOS-only, silent no-op elsewhere. NO new settings wiring \u2014 rides the v5.3 Notification/UserPromptSubmit/Stop bindings.",
@@ -98,13 +99,13 @@
     "FIX: removed dead Fast-Mode logic; gitnexus-refresh cwd-guarded, no auto-exec; ram-monitor rotates its log",
     "Model tiering alias-only; config is a git repo"
   ],
-  "blessed_at": "2026-07-03T07:12:10Z",
+  "blessed_at": "2026-07-03T07:31:56Z",
   "scripts": {
     "resource-check.sh": "ee9f48fca47b67a515ad4c2b9abae85dfe2a7a01e6a832aafa80d227bc4d6163",
     "ram-monitor.sh": "5f612400952415bd966b9f8a49019afb6663db53a4648eec65168d738be38c1a",
     "resource-guard.sh": "65157c80f117e7b716322ee7516a41656a4a89a7db914ca41f9def29dd54865e",
-    "superboost-banner.sh": "1c3235da87aa20f7270addf95c85e53165bc4aaf0dd622bc86078d659ea00b09",
-    "superboost-statusline.sh": "7a894fd315ac9c0fc50f8fdde3a5bd22131f64d6b98e70f5da663d09bbff219b",
+    "superboost-banner.sh": "8e6f05f7a0a3628d7116b0906e24f0dc18671128bd7f42cfd99107278ff0ad53",
+    "superboost-statusline.sh": "7cfb202337e8b36e4c6576961e4e561df5c424c2405dac3e369cb7ef4a3c041a",
     "bless-hooks.sh": "bf6125cc79fedb64302ac00b294cbda63926ea7472eceef61d189833a331bd7e",
     "safety-guard.sh": "06789953a610e915479fee597b313810ea0f012b101c98f2c1bbe00087d4afc0",
     "gitnexus-refresh.sh": "c6c6e9668972b5f3ab0a6a1e0a55a98d8d5d4e1b89c7e2560c6a231072b631e2",

@@ -2,7 +2,7 @@
 
 *Holistic Yield & Validation Engines* — formerly **Superboost**. The internal hook scripts, env vars, and sentinels keep the historical `superboost-` prefix, so upgrading is a `git pull`, not a migration.
 
-![version](https://img.shields.io/badge/HYVES%20CODE-V5.4.2-a855f7)
+![version](https://img.shields.io/badge/HYVES%20CODE-V5.4.3-a855f7)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.170-22d3ee)
 ![tuned for](https://img.shields.io/badge/tuned%20for-Claude%20Fable%205-facc15)
 ![safety](https://img.shields.io/badge/auto--mode-guarded-22c55e)

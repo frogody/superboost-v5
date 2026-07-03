@@ -67,6 +67,10 @@ t "fractional ctx% renders neutral" "echo '$RICH' | COLUMNS=160 '$SL' | grep -qF
 t "RAM bar single-hue (no rainbow)" "! (echo '$RICH' | COLUMNS=160 '$SL' | grep -q '48;2;34;197;94')"
 t "fanout readout neutral"          "echo '$RICH' | COLUMNS=160 '$SL' | grep -qE '38;2;148;163;184m (fanout|tight)~' || echo '$RICH' | COLUMNS=160 '$SL' | perl -pe 's/\e\[[0-9;]*m//g' | grep -q ' solo '"
 t "model chip gold text, no slab"   "echo '$RICH' | COLUMNS=160 '$SL' | grep -q '38;2;250;204;21m' && ! (echo '$RICH' | COLUMNS=160 '$SL' | grep -q '48;2;250;204;21')"
+# v5.4.3: NO solid identity slabs — the only solid backgrounds allowed on a
+# healthy idle bar are none at all (alerts + FX label appear only when live)
+t "no solid identity chips"         "! (echo '$RICH' | COLUMNS=160 '$SL' | grep -qE '48;2;(91;33;182|124;58;237|35;32;18|30;26;44|40;44;54)')"
+t "brand is violet text on strip"   "echo '$RICH' | COLUMNS=160 '$SL' | grep -q '38;2;196;181;253m'"
 t "plain mode branded"             "echo '$RICH' | SUPERBOOST_STATUSLINE_PLAIN=1 '$SL' | grep -qF 'HYVES CODE V5 |'"
 t "empty stdin no crash"           "echo '' | COLUMNS=120 '$SL'"
 # v5.2.1: the FX canvas must be a real stage (>=18 cells) at common widths —

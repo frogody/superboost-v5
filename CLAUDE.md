@@ -1,4 +1,4 @@
-# HYVES CODE V5 (v5.4.2) — Global Configuration (tuned for Claude Fable 5)
+# HYVES CODE V5 (v5.4.3) — Global Configuration (tuned for Claude Fable 5)
 
 Everything in this file is part of **HYVES CODE V5** (Holistic Yield & Validation Engines, by ISYNCSO — formerly "Superboost"; the hook scripts, env vars, and internal identifiers keep the historical `superboost-` prefix so nothing rewires). It activates when the SessionStart hook (`~/.claude/hooks/superboost-banner.sh`) fires — you'll see **"HYVES CODE V5 ACTIVE"** in your system context.
 
@@ -140,7 +140,7 @@ Act on these lines when they appear — they are computed from the live session,
 
 | Family | Meaning | Where |
 |---|---|---|
-| violet + gold | IDENTITY | brand chip (solid, deep violet); model chip = identity hue as TEXT on a dark chip (Fable=gold, Opus=violet). Never status. |
+| violet + gold | IDENTITY | brand + model as bold TEXT on the base strip (Fable=gold, Opus=violet; v5.4.3: no solid identity slabs — solid means "act now"). Never status. |
 | green | CONFIRMED EVENTS | `commit` #22c55e, `pass` #4ade80 washes (churn `+N` is desaturated data, not status) |
 | amber | CAUTION / CHANGE | RAM ≥75%, ctx ≥60%, `tight~N`, `7d` ≥70%, `edit` #f59e0b, `compact` #fbbf24 |
 | red | CRITICAL / FAILED | RAM ≥85%, ctx ≥85% (solid), `200K+`, `solo`, `blocked` #ef4444, `fail` #f87171, `error` #dc2626 |
@@ -154,7 +154,7 @@ Act on these lines when they appear — they are computed from the live session,
 
 (v5.3 recolors enforcing this: `search` left violet — violet is identity; `think` left teal — too close to parallelism cyan.) (v5.4.1 "Quiet": the RAM bar dropped its always-on green→amber→red gradient for a single state-chosen hue — neutral / amber ≥75 / red ≥85 — and green/cyan left the steady-state readouts entirely; user feedback: the bar read as a circus.)
 
-**Role order (left → right):** IDENTITY (brand, model+effort) → WORKSPACE (dir, churn) → MACHINE (RAM bar+stats, `fanout~N`) → SESSION BUDGET (ctx%, `200K+`, 5h, cost) → ACTIVITY (FX wash canvas + effect label pinned at the right edge). **Emphasis tiers (exactly three):** SOLID chip (bg+bold — identity, urgent alerts, FX label) > TINTED readout (colored fg on the dark base strip) > DIM context (dir). Every chip pads one space each side. ctx ≥ 85% escalates from tinted to a SOLID red alert chip.
+**Role order (left → right):** IDENTITY (brand, model+effort) → WORKSPACE (dir, churn) → MACHINE (RAM bar+stats, `fanout~N`) → SESSION BUDGET (ctx%, `200K+`, 5h, cost) → ACTIVITY (FX wash canvas + effect label pinned at the right edge). **Emphasis tiers (exactly three):** SOLID chip (bg+bold — urgent alerts + FX label ONLY; solid means "act now") > TINTED text on the base strip (identity bold, readouts regular) > DIM context (dir). Every chip pads one space each side. ctx ≥ 85% escalates from tinted to a SOLID red alert chip.
 
 **Lifecycle coverage — the bar says what the process is doing at every phase:**
 
@@ -172,4 +172,4 @@ The statusline is a **full-width HUD painted with truecolor backgrounds** (chips
 
 ---
 
-*HYVES CODE V5 (v5.4.2) — formerly Superboost · ISYNCSO · github.com/frogody/hyves-code*
+*HYVES CODE V5 (v5.4.3) — formerly Superboost · ISYNCSO · github.com/frogody/hyves-code*
