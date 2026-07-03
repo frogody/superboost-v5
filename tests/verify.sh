@@ -122,6 +122,39 @@ t "junk COLUMNS clamps"        "L=\$(echo '$RICH53' | SUPERBOOST_FX_DIR='$FXT' e
 t "empty model name -> ?"      "echo '{\"model\":{\"display_name\":\"\"},\"cost\":{\"total_cost_usd\":3.5}}' | SUPERBOOST_FX_DIR='$FXT' env COLUMNS=140 '$SL' | perl -pe 's/\e\[[0-9;]*m//g' | grep -Eq '\? .*\\\$3.50'"
 rm -rf "$FXT"
 
+say "v5.4 radar: stash, budgets, pushes, ledger, cli"
+P="$HOOKS/superboost-parallelism.sh"
+FXR=$(mktemp -d "${TMPDIR:-/tmp}/hyves-fxr.XXXXXX")
+RICH54='{"session_id":"radarsess-9","model":{"display_name":"Fable 5"},"cost":{"total_cost_usd":4.567},"context_window":{"used_percentage":85.3},"rate_limits":{"five_hour":{"used_percentage":82.4},"seven_day":{"used_percentage":75.1}},"effort":{"level":"xhigh"},"workspace":{"current_dir":"/tmp/radarproj"}}'
+J54='{"session_id":"radarsess-9"}'
+N54='{"session_id":"radarsess-9","notification_type":"permission_prompt","message":"needs your permission","cwd":"/tmp/radarproj"}'
+slr() { SUPERBOOST_FX_DIR="$FXR" env COLUMNS=150 "$SL"; }
+fxr() { SUPERBOOST_FX_DIR="$FXR" "$FX" "$@"; }
+# statusline stashes live session stats (change-gated, per sid8)
+t "stats stash written"        "echo '$RICH54' | slr >/dev/null && [ \"\$(cat '$FXR/stats.radarses')\" = '85.3|82.4|75.1|4.57|radarproj' ]"
+# weekly chip: visible amber at 75, absent when healthy
+t "7d chip amber at 75"        "echo '$RICH54' | slr | grep -q '38;2;245;158;11m 7d 75.1% '"
+t "7d chip hidden at 30"       "! (echo '$RICH54' | sed 's/75.1/30.0/' | slr | perl -pe 's/\e\[[0-9;]*m//g' | grep -q '7d')"
+# --turn budget warnings: once per crossing, silent repeat, hysteresis re-arm
+SUPERBOOST_FX_DIR="$FXR" "$P" --line >/dev/null 2>&1
+t "--turn warns rate+context"  "OUT54=\$(echo '$J54' | SUPERBOOST_FX_DIR='$FXR' '$P' --turn); printf '%s' \"\$OUT54\" | grep -q 'Rate-limit budget' && printf '%s' \"\$OUT54\" | grep -q 'Context budget' && grep -q 'rl80' '$FXR/warned.radarses' && grep -q 'ctx80' '$FXR/warned.radarses'"
+t "--turn silent on repeat"    "[ -z \"\$(echo '$J54' | SUPERBOOST_FX_DIR='$FXR' '$P' --turn)\" ]"
+t "--turn re-arms below 70"    "printf '30|55|20|1.00|radarproj\n' > '$FXR/stats.radarses' && echo '$J54' | SUPERBOOST_FX_DIR='$FXR' '$P' --turn >/dev/null && printf '85|82|75|1.10|radarproj\n' > '$FXR/stats.radarses' && echo '$J54' | SUPERBOOST_FX_DIR='$FXR' '$P' --turn | grep -q 'Rate-limit budget'"
+# attention pushes (dryrun): fire once, rate-limited, opt-out
+t "push on permission notify"  "echo '$N54' | SUPERBOOST_FX_DIR='$FXR' SUPERBOOST_PUSH_DRYRUN=1 '$FX' notify && grep -q 'Claude needs you - radarproj' '$FXR/push.dryrun'"
+t "push rate-limited 90s"      "echo '$N54' | SUPERBOOST_FX_DIR='$FXR' SUPERBOOST_PUSH_DRYRUN=1 '$FX' notify && [ \"\$(wc -l < '$FXR/push.dryrun' | tr -d ' ')\" = 1 ]"
+t "PUSH=0 kills pushes"        "rm -f '$FXR/push.dryrun' '$FXR/push.stamp'; echo '$N54' | SUPERBOOST_FX_DIR='$FXR' SUPERBOOST_PUSH_DRYRUN=1 SUPERBOOST_PUSH=0 '$FX' notify && [ ! -f '$FXR/push.dryrun' ]"
+# long-turn push: turn stamp consumed by done; short turns stay silent
+t "long turn pushes on done"   "echo '$J54' | fxr emit turn && python3 -c \"import time;open('$FXR/turnstart.radarses','w').write(str(int(time.time())-120))\" && echo '$J54' | SUPERBOOST_FX_DIR='$FXR' SUPERBOOST_PUSH_DRYRUN=1 '$FX' emit done && grep -q 'Turn ran 2m 0s' '$FXR/push.dryrun' && [ ! -f '$FXR/turnstart.radarses' ]"
+t "short turn no push"         "rm -f '$FXR/push.dryrun' '$FXR/push.stamp'; echo '$J54' | fxr emit turn && echo '$J54' | SUPERBOOST_FX_DIR='$FXR' SUPERBOOST_PUSH_DRYRUN=1 '$FX' emit done && [ ! -f '$FXR/push.dryrun' ]"
+# SessionEnd folds the stats snapshot into the cost ledger
+t "clear folds cost ledger"    "printf '42|55|20|3.21|radarproj\n' > '$FXR/stats.radarses' && echo '$J54' | SUPERBOOST_FX_DIR='$FXR' SUPERBOOST_LEDGER='$FXR/ledger.tsv' '$FX' clear && grep -q 'radarproj	3.21' '$FXR/ledger.tsv' && [ ! -f '$FXR/stats.radarses' ]"
+# hyves CLI
+HY="$HOOKS/hyves.sh"
+t "hyves version"              "'$HY' version | grep -q 'HYVES CODE v'"
+t "hyves stats reads ledger"   "SUPERBOOST_LEDGER='$FXR/ledger.tsv' '$HY' stats 7 | grep -q 'radarproj'"
+rm -rf "$FXR"
+
 say "resource probe json"
 t "resource-check valid JSON"  "'$HOOKS/resource-check.sh' --quiet | python3 -c 'import sys,json; json.load(sys.stdin)'"
 t "available_gb leading digit" "'$HOOKS/resource-check.sh' --quiet | grep -Eq '\"available_gb\":[0-9]'"

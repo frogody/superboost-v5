@@ -94,6 +94,46 @@ state_path() {  # $1=sid8 -> path
   if [ -n "$1" ]; then printf '%s' "$FX_DIR/state.$1"; else printf '%s' "$FX_STATE"; fi
 }
 
+# ---------------------------------------------------------------- v5.4 pushes
+# Native macOS notification when the terminal can't carry the signal itself:
+# the pink attn wash is invisible when the window is occluded (App Nap pauses
+# statusline renders), which is EXACTLY when the user needs the shoulder-tap.
+# Gates, in order: SUPERBOOST_PUSH=0 kills all pushes; a 90s rate limit stops
+# spam; SUPERBOOST_PUSH_DRYRUN=1 records intent to $FX_DIR/push.dryrun (tests);
+# frontmost-terminal suppression (the TUI/wash already carries the signal when
+# you are looking at a terminal) unless SUPERBOOST_PUSH=2 forces; macOS-only.
+front_is_terminal() {
+  command -v lsappinfo >/dev/null 2>&1 || return 1
+  local name
+  name="$(lsappinfo info -only name "$(lsappinfo front 2>/dev/null)" 2>/dev/null)"
+  case "$name" in
+    *Terminal*|*iTerm*|*Warp*|*kitty*|*Alacritty*|*WezTerm*|*Ghostty*|*Hyper*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+maybe_push() {  # $1=title  $2=body
+  [ "${SUPERBOOST_PUSH:-1}" = "0" ] && return 0
+  local now last stamp="$FX_DIR/push.stamp"
+  now="$(date +%s 2>/dev/null)"; [ -z "$now" ] && return 0
+  last="$(cat "$stamp" 2>/dev/null)"; case "$last" in ''|*[!0-9]*) last=0 ;; esac
+  [ $(( now - last )) -lt "${SUPERBOOST_PUSH_MIN_GAP:-90}" ] && return 0
+  # sanitize for AppleScript string context (and our own dryrun format)
+  local title body
+  title="$(printf '%s' "$1" | tr -d '"\\|' | cut -c1-60)"
+  body="$(printf '%s' "$2" | tr -d '"\\|' | cut -c1-120)"
+  if [ "${SUPERBOOST_PUSH_DRYRUN:-0}" = "1" ]; then
+    printf '%s|%s|%s\n' "$now" "$title" "$body" >> "$FX_DIR/push.dryrun" 2>/dev/null
+    printf '%s' "$now" > "$stamp" 2>/dev/null
+    return 0
+  fi
+  [ "$(uname)" = "Darwin" ] || return 0
+  command -v osascript >/dev/null 2>&1 || return 0
+  if [ "${SUPERBOOST_PUSH:-1}" != "2" ] && front_is_terminal; then return 0; fi
+  osascript -e "display notification \"$body\" with title \"$title\"" >/dev/null 2>&1
+  printf '%s' "$now" > "$stamp" 2>/dev/null
+}
+
 write_fx() {  # $1=effect  $2=optional-label-override  $3=optional-sid8
   local eff="$1" label_override="$2" sid="$3"
   local spec label r g b ttl now dest tmp
@@ -132,20 +172,66 @@ if [ "$1" = "emit" ]; then
   [ -z "$2" ] && { echo "usage: superboost-fx.sh emit <effect> [label]" >&2; exit 1; }
   SID="${SUPERBOOST_FX_SID:-}"
   [ -z "$SID" ] && SID="$(sid_from_json "$(read_hook_stdin)")"
+  # v5.4 long-turn tracking: `emit turn` (UserPromptSubmit) stamps the turn
+  # start; `emit done` (Stop) reads it and pushes a notification when a turn
+  # ran long — the moment a user has tabbed away and wants the shoulder-tap.
+  TS_FILE="$FX_DIR/turnstart${SID:+.$SID}"
+  if [ "$2" = "turn" ]; then
+    date +%s > "$TS_FILE" 2>/dev/null
+  elif [ "$2" = "done" ] && [ -f "$TS_FILE" ]; then
+    T0="$(cat "$TS_FILE" 2>/dev/null)"; rm -f "$TS_FILE" 2>/dev/null
+    case "$T0" in ''|*[!0-9]*) T0="" ;; esac
+    if [ -n "$T0" ]; then
+      DUR=$(( $(date +%s) - T0 ))
+      if [ "$DUR" -ge "${SUPERBOOST_PUSH_LONG_TURN_SEC:-45}" ]; then
+        maybe_push "Claude finished" "Turn ran $(( DUR / 60 ))m $(( DUR % 60 ))s - ready for you"
+      fi
+    fi
+  fi
   write_fx "$2" "$3" "$SID"
   exit 0
 fi
 
-# --- SessionEnd hygiene: remove THIS session's state; prune stale siblings ---
+# --- SessionEnd hygiene: fold cost into the ledger; remove THIS session's
+# state; prune stale siblings ---
+# v5.4: the statusline stashes live session stats (ctx|5h|7d|cost|dir) per sid;
+# on SessionEnd the final snapshot becomes a ledger row so `hyves stats` can
+# answer "what did today / this project cost?". Stale stats from crashed
+# sessions are folded (best effort) before pruning. Ledger rows are keyed by
+# sid — cost is CUMULATIVE per session, so readers aggregate max-per-sid, which
+# also makes duplicate folds harmless.
+fold_stats() {  # $1=stats-file  $2=sid8
+  local ledger="${SUPERBOOST_LEDGER:-$HOME/.claude/logs/cost-ledger.tsv}"
+  [ -f "$1" ] || return 0
+  local ctx rl5 rl7 cost dir
+  IFS='|' read -r ctx rl5 rl7 cost dir < "$1" 2>/dev/null
+  case "$cost" in ''|*[!0-9.]*) return 0 ;; esac
+  mkdir -p "$(dirname "$ledger")" 2>/dev/null
+  printf '%s\t%s\t%s\t%s\n' "$(date +%Y-%m-%d)" "${2:-global}" "${dir:--}" "$cost" >> "$ledger" 2>/dev/null
+}
+
 if [ "$1" = "clear" ]; then
   SID="${SUPERBOOST_FX_SID:-}"
   [ -z "$SID" ] && SID="$(sid_from_json "$(read_hook_stdin)")"
-  if [ -n "$SID" ]; then rm -f "$FX_DIR/state.$SID" 2>/dev/null; else rm -f "$FX_STATE" 2>/dev/null; fi
-  find "$FX_DIR" -name 'state.*' -mmin +240 -delete 2>/dev/null
+  if [ -n "$SID" ]; then
+    fold_stats "$FX_DIR/stats.$SID" "$SID"
+    rm -f "$FX_DIR/state.$SID" "$FX_DIR/stats.$SID" "$FX_DIR/turnstart.$SID" 2>/dev/null
+  else
+    rm -f "$FX_STATE" "$FX_DIR/turnstart" 2>/dev/null
+  fi
+  # crashed sessions never ran their own clear: fold, then prune
+  for f in "$FX_DIR"/stats.*; do
+    [ -f "$f" ] || continue
+    if [ -n "$(find "$f" -mmin +240 2>/dev/null)" ]; then
+      fold_stats "$f" "${f##*.}"
+      rm -f "$f" 2>/dev/null
+    fi
+  done
+  find "$FX_DIR" \( -name 'state.*' -o -name 'turnstart.*' \) -mmin +240 -delete 2>/dev/null
   exit 0
 fi
 
-# --- Notification hook: waiting-on-user types -> pink ATTN ---
+# --- Notification hook: waiting-on-user types -> pink ATTN + push ---
 if [ "$1" = "notify" ]; then
   NJSON="$(read_hook_stdin)"
   [ -z "$NJSON" ] && exit 0
@@ -158,10 +244,18 @@ except Exception:
 nt = str(d.get("notification_type", "") or "")
 if nt in ("permission_prompt", "idle_prompt", "agent_needs_input", "elicitation_dialog"):
     sid = re.sub(r"[^A-Za-z0-9-]", "", str(d.get("session_id", "") or ""))[:8]
-    print(f"attn|{sid}")
+    cwd = str(d.get("cwd", "") or "").rstrip("/").rsplit("/", 1)[-1]
+    msg = re.sub(r"[|\"\\\n]", " ", str(d.get("message", "") or ""))[:100]
+    print(f"attn|{sid}|{cwd}|{msg}")
 PY
 )"
-  if [ -n "$OUT" ]; then write_fx "${OUT%%|*}" "" "${OUT#*|}"; fi
+  if [ -n "$OUT" ]; then
+    IFS='|' read -r N_EFF N_SID N_DIR N_MSG <<EOF
+$OUT
+EOF
+    write_fx "$N_EFF" "" "$N_SID"
+    maybe_push "Claude needs you${N_DIR:+ - $N_DIR}" "${N_MSG:-Waiting for your input}"
+  fi
   exit 0
 fi
 

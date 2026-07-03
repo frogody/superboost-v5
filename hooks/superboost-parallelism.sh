@@ -102,9 +102,66 @@ else:
 PY
 )"
 
+# v5.4 "three budgets": RAM was the only budget with a feedback LOOP (probe ->
+# context -> guard). --turn now also watches the session's rate-limit and
+# context-window budgets via the statusline's stats stash (stats.<sid8>:
+# ctx|5h|7d|cost|dir) and injects ONE actionable line per threshold crossing —
+# hysteresis via warned.<sid8> (warn at >=80, re-arm below 70), silent otherwise.
+BUDGET_WARNINGS=""
+if [ "$OUT" = "turn" ] && [ ! -t 0 ]; then
+  TURN_JSON="$(cat 2>/dev/null)"
+  SID="$(PB_J="$TURN_JSON" python3 -c '
+import json, os, re
+try:
+    d = json.loads(os.environ.get("PB_J", "") or "{}")
+    print(re.sub(r"[^A-Za-z0-9-]", "", str(d.get("session_id", "") or ""))[:8])
+except Exception:
+    pass
+' 2>/dev/null)"
+  if [ -n "$SID" ]; then
+    SDIR="${SUPERBOOST_FX_DIR:-$HOME/.claude/fx}"
+    STATS_F="$SDIR/stats.$SID"
+    WARNED_F="$SDIR/warned.$SID"
+    if [ -f "$STATS_F" ]; then
+      IFS='|' read -r S_CTX S_RL5 S_R7 S_COST S_DIR < "$STATS_F" 2>/dev/null
+      CTX_I="${S_CTX%%.*}"; case "$CTX_I" in ''|*[!0-9]*) CTX_I="" ;; esac
+      RL5_I="${S_RL5%%.*}"; case "$RL5_I" in ''|*[!0-9]*) RL5_I="" ;; esac
+      WARNED="$(cat "$WARNED_F" 2>/dev/null)"
+      NEW_WARNED="$WARNED"
+      if [ -n "$RL5_I" ]; then
+        if [ "$RL5_I" -ge 80 ]; then
+          case "$NEW_WARNED" in *rl80*) : ;; *)
+            BUDGET_WARNINGS="${BUDGET_WARNINGS}Rate-limit budget: the 5h window is at ${S_RL5}% — tier down NOW: sonnet/haiku for sub-agents, narrow fan-out, batch related work. A hard rate stop mid-task costs more than slower models do.\n"
+            NEW_WARNED="${NEW_WARNED}rl80 " ;;
+          esac
+        elif [ "$RL5_I" -lt 70 ]; then
+          NEW_WARNED="$(printf '%s' "$NEW_WARNED" | sed 's/rl80 //')"
+        fi
+      fi
+      if [ -n "$CTX_I" ]; then
+        if [ "$CTX_I" -ge 80 ]; then
+          case "$NEW_WARNED" in *ctx80*) : ;; *)
+            BUDGET_WARNINGS="${BUDGET_WARNINGS}Context budget: the window is at ${S_CTX}% used — checkpoint durable state to memory files, delegate exploration to sub-agents (their context is separate), and finish or /compact at the next natural boundary.\n"
+            NEW_WARNED="${NEW_WARNED}ctx80 " ;;
+          esac
+        elif [ "$CTX_I" -lt 70 ]; then
+          NEW_WARNED="$(printf '%s' "$NEW_WARNED" | sed 's/ctx80 //')"
+        fi
+      fi
+      if [ "$NEW_WARNED" != "$WARNED" ]; then
+        printf '%s' "$NEW_WARNED" > "$WARNED_F" 2>/dev/null
+      fi
+    fi
+  fi
+fi
+
 if [ -z "$RESULT" ]; then
-  # per-turn probe failure stays SILENT (no context noise); explicit calls report it
-  [ "$OUT" = "turn" ] && exit 0
+  # per-turn probe failure stays SILENT (no context noise); explicit calls
+  # report it. Budget warnings are independent of the probe — still deliver.
+  if [ "$OUT" = "turn" ]; then
+    [ -n "$BUDGET_WARNINGS" ] && printf '%b' "$BUDGET_WARNINGS"
+    exit 0
+  fi
   echo "Parallelism budget unavailable (resource probe failed)."
   exit 0
 fi
@@ -118,11 +175,12 @@ if [ "$OUT" = "line" ] || [ "$OUT" = "turn" ]; then
   mkdir -p "$STASH_DIR" 2>/dev/null
   [ -n "$MODE" ] && printf '%s' "$MODE" > "$STASH" 2>/dev/null
   if [ "$OUT" = "turn" ]; then
-    # speak ONLY when the posture flipped (wide<->balanced<->narrow<->solo);
-    # a silent turn means "budget unchanged" and costs zero tokens
+    # speak ONLY when something changed: posture flip and/or a budget
+    # threshold crossing; a silent turn means "all budgets unchanged"
     if [ -n "$MODE" ] && [ -n "$LAST" ] && [ "$MODE" != "$LAST" ]; then
       printf '%s\n' "${RESULT}  ->  Fan-out posture CHANGED (was ${LAST}). Re-size any planned agent/Workflow fan-out to this budget."
     fi
+    [ -n "$BUDGET_WARNINGS" ] && printf '%b' "$BUDGET_WARNINGS"
     exit 0
   fi
 fi

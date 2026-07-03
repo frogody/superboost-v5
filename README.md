@@ -2,7 +2,7 @@
 
 *Holistic Yield & Validation Engines* — formerly **Superboost**. The internal hook scripts, env vars, and sentinels keep the historical `superboost-` prefix, so upgrading is a `git pull`, not a migration.
 
-![version](https://img.shields.io/badge/HYVES%20CODE-V5.3.0-a855f7)
+![version](https://img.shields.io/badge/HYVES%20CODE-V5.4.0-a855f7)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.170-22d3ee)
 ![tuned for](https://img.shields.io/badge/tuned%20for-Claude%20Fable%205-facc15)
 ![safety](https://img.shields.io/badge/auto--mode-guarded-22c55e)
@@ -90,6 +90,29 @@ Requires **Claude Code ≥ 2.1.170** (for Fable 5) — run `claude update` if ne
 ~/.claude/hooks/bless-hooks.sh                      # re-seal checksums after editing a hook
 ~/.claude/hooks/hyves-boot.sh                       # replay the HYVES CODE boot cinema
 ```
+
+---
+
+## What's new in v5.4.0 "Radar" — it taps your shoulder, watches all three budgets, and knows what you spent
+
+**Attention pushes.** The two moments a terminal can't carry now arrive as native macOS notifications: **"Claude needs you"** when a session is blocked on a permission prompt or your input (with the message and project name), and **"Claude finished"** when a turn ran long while you were in another app. Smart by default: suppressed while you're looking at a terminal, rate-limited to one per 90s, `SUPERBOOST_PUSH=0` to disable, `=2` to force. This closes the App Nap gap — the pink NEEDS-YOU wash pauses exactly when the window is hidden, which is exactly when you need the tap.
+
+**Three budgets, one loop.** RAM already had a real feedback loop (probe → budget in context → spawn guard). Now the other two budgets you live under get the same treatment, riding the existing live-budget hook with the same zero-ceremony contract (one line per threshold crossing, hysteresis, silence otherwise):
+- **Rate-limit budget** — 5h window ≥80% → Claude is told to tier down to `sonnet`/`haiku` sub-agents, narrow fan-out, and batch work *before* a hard rate stop interrupts the task. A `7d N%` weekly chip appears on the bar only when ≥70%.
+- **Context budget** — window ≥80% → checkpoint state to memory, delegate exploration to sub-agents, `/compact` at a natural boundary — before compaction chooses the boundary for you.
+
+**`hyves` — one command for the whole layer.**
+```bash
+alias hyves=~/.claude/hooks/hyves.sh
+hyves            # boot mark + live budgets + version
+hyves doctor     # full self-test (add --full to run both regression suites)
+hyves stats 14   # what did the last two weeks cost, per day and per project?
+hyves demo       # cycle every FX wash in your statusline
+hyves update     # git pull --ff-only + re-bless + self-test
+```
+`hyves stats` reads a local cost ledger that fills automatically as sessions end (`logs/cost-ledger.tsv` — plain TSV, no telemetry, yours).
+
+**Roadmap** (next candidates, in value order): Linux `notify-send` pushes · a session-start "update available" check (cached, offline-safe) · per-project HYVES profiles · rate-budget-aware auto-tiering hints in the Agent/Workflow router.
 
 ---
 

@@ -10,7 +10,7 @@
 #   3. Emits the HYVES CODE banner block for Claude to open its first reply with
 # Save to: ~/.claude/hooks/superboost-banner.sh
 
-SUPERBOOST_VERSION="5.3.0"
+SUPERBOOST_VERSION="5.4.0"
 HOOKS_DIR="$HOME/.claude/hooks"
 SETTINGS="$HOME/.claude/settings.json"
 CLAUDE_MD="$HOME/.claude/CLAUDE.md"
@@ -26,7 +26,7 @@ check_fail() { FAIL=$((FAIL + 1)); ISSUES="${ISSUES}FAIL: $1\n"; }
 check_warn() { WARN=$((WARN + 1)); ISSUES="${ISSUES}WARN: $1\n"; }
 
 # 1. Hook scripts exist and are executable
-for script in resource-check.sh ram-monitor.sh resource-guard.sh superboost-banner.sh superboost-statusline.sh safety-guard.sh gitnexus-refresh.sh bless-hooks.sh superboost-secrets.sh superboost-fx.sh superboost-parallelism.sh hyves-boot.sh; do
+for script in resource-check.sh ram-monitor.sh resource-guard.sh superboost-banner.sh superboost-statusline.sh safety-guard.sh gitnexus-refresh.sh bless-hooks.sh superboost-secrets.sh superboost-fx.sh superboost-parallelism.sh hyves-boot.sh hyves.sh; do
   if [ -x "$HOOKS_DIR/$script" ]; then
     check_pass
   else

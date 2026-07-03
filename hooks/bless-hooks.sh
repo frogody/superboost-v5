@@ -11,7 +11,7 @@ set -e
 
 HOOKS_DIR="$HOME/.claude/hooks"
 VERSION_FILE="$HOME/.claude/superboost-version.json"
-TRACKED=(resource-check.sh ram-monitor.sh resource-guard.sh superboost-banner.sh superboost-statusline.sh bless-hooks.sh safety-guard.sh gitnexus-refresh.sh superboost-secrets.sh superboost-fx.sh superboost-parallelism.sh hyves-boot.sh)
+TRACKED=(resource-check.sh ram-monitor.sh resource-guard.sh superboost-banner.sh superboost-statusline.sh bless-hooks.sh safety-guard.sh gitnexus-refresh.sh superboost-secrets.sh superboost-fx.sh superboost-parallelism.sh hyves-boot.sh hyves.sh)
 
 if [ ! -f "$VERSION_FILE" ]; then
   echo "ERROR: $VERSION_FILE not found" >&2

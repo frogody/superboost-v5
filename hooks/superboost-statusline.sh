@@ -61,7 +61,7 @@ fi
 # v5.2.2: percentages rounded to 1 decimal in jq — the harness can emit float
 # noise like 7.000000000000001, which rendered verbatim in the 5h chip; a
 # missing/non-numeric value still yields the "-" sentinel via try/catch
-IFS=$'\t' read -r MODEL COST CTX RLIM EFFORT ADDED REMOVED CWD BIG SID <<EOF
+IFS=$'\t' read -r MODEL COST CTX RLIM EFFORT ADDED REMOVED CWD BIG SID R7 <<EOF
 $(echo "$INPUT" | jq -r '[
   ((.model.display_name // "?") | tostring | if . == "" then "?" else . end),
   (.cost.total_cost_usd // 0),
@@ -73,7 +73,8 @@ $(echo "$INPUT" | jq -r '[
   ((((.workspace.current_dir // .cwd // "") | tostring | split("/") | last) // "")
     | if . == "" then "-" else . end),
   (if .exceeds_200k_tokens == true then "1" else "0" end),
-  ((.session_id // "-") | tostring | if . == "" then "-" else . end)
+  ((.session_id // "-") | tostring | if . == "" then "-" else . end),
+  (try (((.rate_limits.seven_day.used_percentage * 10) | round) / 10) catch "-")
 ] | @tsv' 2>/dev/null)
 EOF
 # tab-IFS read collapses EMPTY tsv fields (they'd shift right-hand fields left),
@@ -101,6 +102,8 @@ CTX_INT="${CTX%%.*}"; case "$CTX_INT" in ''|*[!0-9]*) CTX_INT="" ;; esac
 # v5.3: session id (first 8 chars) keys this session's FX state file
 [ "$SID" = "-" ] && SID=""
 SID8=$(printf '%s' "$SID" | LC_ALL=C tr -cd 'A-Za-z0-9-' | cut -c1-8)
+[ -z "$R7" ] && R7="-"
+R7_INT="${R7%%.*}"; case "$R7_INT" in ''|*[!0-9]*) R7_INT="" ;; esac
 
 # --- Live RAM stats ---
 if [ "$(uname)" = "Darwin" ]; then
@@ -139,6 +142,20 @@ else                               CAP="solo";                 CAP_R=239; CAP_G=
 # session's own lifecycle wins but demo/manual emits still show everywhere.
 FX_DIR_P="${SUPERBOOST_FX_DIR:-$HOME/.claude/fx}"
 FX_STATE="$FX_DIR_P/state"
+# v5.4 stats stash: latest ctx|5h|7d|cost|dir snapshot per session, written
+# only when a value CHANGES (renders run at 1Hz when idle — no write churn).
+# Consumers: `--turn` budget warnings (rate/context thresholds) and the
+# SessionEnd ledger fold (`hyves stats`). Atomic like the FX state.
+if [ -n "$SID8" ]; then
+  STATS_F="$FX_DIR_P/stats.$SID8"
+  COST2="$(printf '%.2f' "$COST" 2>/dev/null)"; [ -z "$COST2" ] && COST2="0.00"
+  STATS_LINE="${CTX}|${RLIM}|${R7}|${COST2}|${CWD:--}"
+  if [ "$STATS_LINE" != "$(cat "$STATS_F" 2>/dev/null)" ]; then
+    printf '%s\n' "$STATS_LINE" > "$STATS_F.tmp.$$" 2>/dev/null \
+      && mv -f "$STATS_F.tmp.$$" "$STATS_F" 2>/dev/null
+    rm -f "$STATS_F.tmp.$$" 2>/dev/null
+  fi
+fi
 if [ -n "$SID8" ] && [ -f "$FX_DIR_P/state.$SID8" ]; then
   if [ -f "$FX_STATE" ]; then
     _tg=$(IFS='|' read -r _ _ _ _ _ tg _ < "$FX_STATE" 2>/dev/null; printf '%s' "${tg%%.*}")
@@ -240,6 +257,10 @@ CTX_TXT=""
 CAP_TXT=" ${CAP} "
 RL_TXT=""
 [ "$RLIM" != "-" ] && RL_TXT=" 5h ${RLIM}% "
+# v5.4: weekly quota joins the session-budget group ONLY when it matters
+# (>=70%) — a healthy week earns no pixels
+R7_TXT=""
+[ "${R7_INT:-0}" -ge 70 ] && R7_TXT=" 7d ${R7}% "
 COST_TXT="$(printf ' $%.2f ' "$COST")"
 FXL_TXT=""
 [ "$FX_ON" = "1" ] && FXL_TXT=" ${FX_LABEL} "
@@ -255,7 +276,7 @@ BIG_TXT=""
 RB=$(( W * 12 / 100 )); [ "$RB" -lt 10 ] && RB=10
 
 FIXED=$(( ${#BRAND_TXT} + ${#MODEL_TXT} + ${#RAM_LBL} + RB + ${#STATS_TXT} \
-        + ${#CTX_TXT} + ${#CAP_TXT} + ${#FXL_TXT} + ${#RL_TXT} + ${#COST_TXT} \
+        + ${#CTX_TXT} + ${#CAP_TXT} + ${#FXL_TXT} + ${#RL_TXT} + ${#R7_TXT} + ${#COST_TXT} \
         + ${#DIR_TXT} + ${#CHURN_TXT} + ${#BIG_TXT} ))
 CANVAS=$(( W - FIXED ))
 # v5.2.1: the canvas is the STAGE for washes/scanner/sweep — below ~18 cells the
@@ -378,6 +399,12 @@ fi
 CAPP="${BG0}$(c "$CAP_R" "$CAP_G" "$CAP_B")${CAP_TXT}${RST}"
 RLP=""
 [ -n "$RL_TXT" ] && RLP="${BG0}$(c 100 116 139)${RL_TXT}${RST}"
+R7P=""
+if [ -n "$R7_TXT" ]; then
+  # visible only under pressure -> status hues: amber <90, red >=90
+  if [ "${R7_INT:-0}" -ge 90 ]; then R7P="${BG0}$(c 239 68 68)${R7_TXT}${RST}"
+  else                               R7P="${BG0}$(c 245 158 11)${R7_TXT}${RST}"; fi
+fi
 COSTP="${BG0}$(c 148 163 184)${COST_TXT}${RST}"
 FXLP=""
 if [ "$FX_ON" = "1" ]; then
@@ -397,6 +424,6 @@ BIGP=""
 # WORKSPACE (dir, churn) -> MACHINE (RAM bar+stats, fan-out budget) ->
 # SESSION BUDGET (ctx, 200K+, 5h rate, cost) -> ACTIVITY (wash canvas + FX
 # label pinned to the right edge, where the eye checks "what is it doing now").
-printf '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n' \
+printf '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n' \
   "$BRAND" "$MODEL_CHIP" "$DIRP" "$CHURNP" "$RAML" "$RAMBAR" "$RST" "$STATS" \
-  "$CAPP" "$CTXP" "$BIGP" "$RLP" "$COSTP" "$WASH" "$FXLP"
+  "$CAPP" "$CTXP" "$BIGP" "$RLP" "$R7P" "$COSTP" "$WASH" "$FXLP"
