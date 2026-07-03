@@ -1,41 +1,71 @@
 {
-  "version": "4.0.0",
+  "version": "5.0.0",
+  "codename": "Fable",
   "installed_at": "2026-03-08T17:00:00Z",
   "upgraded_at": "2026-07-03T00:00:00Z",
   "source_path": "/Users/godyduinsbergen/.claude/hooks",
   "project_path": "/Users/godyduinsbergen",
+  "target_model": {
+    "_note": "v5 is tuned for Claude Fable 5. The Claude Code default model is set to fable[1m] in settings.json with an availableModels allowlist so a blocked default degrades to Opus 4.8 with a warning instead of failing.",
+    "id": "claude-fable-5",
+    "alias": "fable",
+    "context_tier": "1m",
+    "context_window_tokens": 1000000,
+    "max_output_tokens": 128000,
+    "pricing_usd_per_mtok": {
+      "input": 10,
+      "output": 50
+    },
+    "thinking": "always-on adaptive (budget_tokens rejected; control depth with effort)",
+    "effort_levels": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "effort_default": "xhigh",
+    "refusal_stop_reason": "cyber/bio safety classifier may return stop_reason=refusal; Claude Code ships built-in Opus 4.8 fallbacks"
+  },
   "model_tiers": {
-    "_note": "Alias-only. The Agent tool's model override accepts opus|sonnet|haiku, NOT pinned minor versions. Do not hardcode 4.x numbers anywhere; they drift and cannot be passed.",
-    "orchestrator": "opus",
-    "synthesizer": "opus",
-    "judge": "opus",
+    "_note": "Alias-only. The Agent/Workflow model override accepts fable|opus|sonnet|haiku, NOT pinned minor versions. Do not hardcode 5.x/4.x numbers anywhere; they drift and cannot be passed.",
+    "orchestrator": "fable",
+    "synthesizer": "fable",
+    "judge": "fable",
     "worker": "sonnet",
     "explorer": "haiku"
   },
+  "v5_changes": [
+    "RETUNED for Claude Fable 5: settings default model -> fable[1m] + availableModels allowlist [fable,opus,sonnet] (blocked default degrades to opus with a warning, not a hard fail)",
+    "MODEL TIERING: orchestrator/synthesizer/judge now = fable (was opus); worker=sonnet, explorer=haiku unchanged",
+    "DOCTRINE: added Fable-5 prompting doctrine to CLAUDE.md \u00a79 \u2014 dependable async sub-agents (delegate + keep working), state-the-objective + the Why, grounded progress claims, no-tidying at high effort, longer minutes-long turns, memory surface, effort sweep",
+    "REFUSAL AWARENESS: CLAUDE.md documents the Fable-5 cyber/bio classifier + Claude Code's built-in Opus 4.8 fallback so a refusal is understood, not mistaken for a failure",
+    "RAM->PARALLELISM: new superboost-parallelism.sh turns the RAM probe into an actionable fan-out budget (concurrent agents + workflow width + mode); the SessionStart banner now EMITS the budget into context so the orchestrator sizes fan-out to free memory \u2014 wide when RAM is ample, solo when tight (a capability plain Fable-5-on-Claude-Code does not offer)",
+    "TERMINAL FX: new superboost-fx.sh event emitter (PostToolUse + manual `emit`) writes short-lived colored-effect state (no stdout \u2014 zero context pollution); the statusline renders it as a decaying colored activity segment (preflight=blue, fan-out=cyan, commit=green, deploy=indigo, blocked=red, edit=amber, search=violet)",
+    "STATUSLINE: now COLORIZED (ANSI truecolor SGR only, no wide/ambiguous-width glyphs so width calc stays exact) with a RAM gradient bar, colored model/cost/capacity, and the live FX segment. SUPERBOOST_STATUSLINE_PLAIN=1 reverts to pure ASCII (honors the v4 width-safety caution).",
+    "Rebranded v4.0 -> v5.0; aligned banner, CLAUDE.md, statusline, README, version.json",
+    "Integrity: superboost-fx.sh + superboost-parallelism.sh added to checksum tracking"
+  ],
   "v4_changes": [
     "Rebranded v3.x -> v4.0; aligned banner, CLAUDE.md, statusline, version.json",
-    "SECURITY: new safety-guard.sh PreToolUse hook (Bash/Write/Edit) hard-blocks catastrophic/exfil actions + enforces the calculator lock \u2014 replaces prose-only 'Auto-Mode Safety Checklist'",
-    "FIX: resource-guard.sh now exits 2 to actually block (was exit 1, a no-op) and captures the resource-check exit code correctly (was masked by '|| echo')",
-    "FIX: statusline is pure ASCII \u2014 removed ANSI escapes + emoji that corrupted TUI width calc and leaked SGR mouse reports into the input line",
-    "FIX: removed dead Fast-Mode logic (premise 'fast = Opus 4.6, no thinking' is false; regex false-positived Sonnet 4.6)",
-    "FIX: gitnexus-refresh.sh guards on cwd and no longer auto-runs 'npx analyze' at session start",
-    "FIX: ram-monitor.sh rotates its log (was 39MB/210k lines) and samples writes",
-    "FIX: resource-check.sh drops the meaningless process-count block (in-process teammates aren't separate processes)",
-    "Model tiering is alias-only (opus/sonnet/haiku); removed stale 4.7/4.6 pins",
-    "Integrity: safety-guard.sh + gitnexus-refresh.sh are now checksum-tracked (were not)",
-    "SLIM: cut mandatory progress-bar injection, printed Pre-Flight block, always-on banner render, and OP-Mode/wave/rate-zone machinery \u2014 defer orchestration to the native Workflow tool",
-    "Config is now a git repo (github.com/frogody/superboost-v4) so edits are recoverable"
+    "SECURITY: safety-guard.sh PreToolUse hook hard-blocks catastrophic/exfil actions + enforces the calculator lock",
+    "FIX: resource-guard.sh exits 2 to actually block (was exit 1, a no-op)",
+    "FIX: statusline pure ASCII (removed ANSI + emoji that corrupted TUI width calc)",
+    "FIX: removed dead Fast-Mode logic; gitnexus-refresh cwd-guarded, no auto-exec; ram-monitor rotates its log",
+    "Model tiering alias-only; config is a git repo"
   ],
-  "blessed_at": "2026-07-03T01:03:08Z",
+  "blessed_at": "2026-07-03T01:27:16Z",
   "scripts": {
     "resource-check.sh": "87b926d9f8f7f5fa711da707eb4196c16bcbb39c12fe070fdebfe770b5e20df1",
     "ram-monitor.sh": "fe81960686b85d6ee1c8eb768ffdb81caf18e1704f34cb4faaa5dfeeb4939b17",
     "resource-guard.sh": "65157c80f117e7b716322ee7516a41656a4a89a7db914ca41f9def29dd54865e",
-    "superboost-banner.sh": "dc55891277ea227257caee5172ee46f45022efe54a2e5e29aab9e6e043ac9638",
-    "superboost-statusline.sh": "1ca026959e9a404cf53920d53bfa17e183a7072764734d0b0a039e580cc6a549",
-    "bless-hooks.sh": "b2b28fc8571c32f433fd9242b193b3b74c4b31681abad87de8ba0a34f487c6e7",
+    "superboost-banner.sh": "5f280112f9a35a25f0972d1c92831ece6cd469515b59477638c3e403db0ebc0a",
+    "superboost-statusline.sh": "d8fffb87d607ddb66b93e4a78fd18bc08af78ae617a5b1a1d460ba51e0e9e166",
+    "bless-hooks.sh": "e2d258fafe46e7dc5a007cb782b9fcc4c20292c6bc14caf28982f94f937e0e8d",
     "safety-guard.sh": "4bc4d1bd308e123e240154801880d5415ae3f737ccbbd152b5056bd603fd54ac",
     "gitnexus-refresh.sh": "c6c6e9668972b5f3ab0a6a1e0a55a98d8d5d4e1b89c7e2560c6a231072b631e2",
-    "superboost-secrets.sh": "0f55ea52c38d5534f65c2ffde51efc32c3f1bfe6da4aa2ededf3f27dfe9c7d34"
+    "superboost-secrets.sh": "0f55ea52c38d5534f65c2ffde51efc32c3f1bfe6da4aa2ededf3f27dfe9c7d34",
+    "superboost-fx.sh": "13c1ebe89b9f7f7219e30001afa858db0d4bb84a21c281a6d577952565843826",
+    "superboost-parallelism.sh": "5970fc2d732d12f5713fdc96b2668f2485e9bd09241512a5fc67ee47b6cf1e13"
   }
 }

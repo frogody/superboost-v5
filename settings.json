@@ -5,7 +5,8 @@
   "permissions": {
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
+  "model": "fable[1m]",
+  "availableModels": ["fable", "opus", "sonnet"],
   "hooks": {
     "PreToolUse": [
       {
@@ -34,6 +35,11 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/ram-monitor.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/superboost-fx.sh",
             "timeout": 5
           }
         ]

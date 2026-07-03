@@ -8,7 +8,7 @@
 #   3. Outputs banner + health report for Claude to display
 # Save to: ~/.claude/hooks/superboost-banner.sh
 
-SUPERBOOST_VERSION="4.0"
+SUPERBOOST_VERSION="5.0"
 HOOKS_DIR="$HOME/.claude/hooks"
 SETTINGS="$HOME/.claude/settings.json"
 CLAUDE_MD="$HOME/.claude/CLAUDE.md"
@@ -24,7 +24,7 @@ check_fail() { FAIL=$((FAIL + 1)); ISSUES="${ISSUES}FAIL: $1\n"; }
 check_warn() { WARN=$((WARN + 1)); ISSUES="${ISSUES}WARN: $1\n"; }
 
 # 1. Hook scripts exist and are executable
-for script in resource-check.sh ram-monitor.sh resource-guard.sh superboost-banner.sh superboost-statusline.sh safety-guard.sh gitnexus-refresh.sh bless-hooks.sh superboost-secrets.sh; do
+for script in resource-check.sh ram-monitor.sh resource-guard.sh superboost-banner.sh superboost-statusline.sh safety-guard.sh gitnexus-refresh.sh bless-hooks.sh superboost-secrets.sh superboost-fx.sh superboost-parallelism.sh; do
   if [ -x "$HOOKS_DIR/$script" ]; then
     check_pass
   else
@@ -50,7 +50,7 @@ fi
 # 3. CLAUDE.md exists and contains Superboost v4 content
 if [ -f "$CLAUDE_MD" ]; then
   check_pass
-  grep -q "Superboost v4" "$CLAUDE_MD" 2>/dev/null && check_pass || check_warn "CLAUDE.md doesn't reference Superboost v4"
+  grep -q "Superboost v5" "$CLAUDE_MD" 2>/dev/null && check_pass || check_warn "CLAUDE.md doesn't reference Superboost v5"
   grep -q "Auto-Router" "$CLAUDE_MD" 2>/dev/null && check_pass || check_warn "CLAUDE.md missing Auto-Router"
   grep -q "Model Tiering" "$CLAUDE_MD" 2>/dev/null && check_pass || check_warn "CLAUDE.md missing Model Tiering"
   grep -q "safety-guard" "$CLAUDE_MD" 2>/dev/null && check_pass || check_warn "CLAUDE.md missing safety-guard reference"
@@ -164,18 +164,25 @@ ${ISSUE_LIST}
 "
 fi
 
-# ─── Output (v4: silent on success; surface ONLY problems) ───
+# ─── Parallelism budget (v5): RAM -> actionable fan-out posture ───
+# Emitted into context so the orchestrator sizes fan-out to free memory up front.
+PARA_LINE="$("$HOOKS_DIR/superboost-parallelism.sh" --line 2>/dev/null)"
+[ -z "$PARA_LINE" ] && PARA_LINE="Parallelism budget: (unavailable)"
+
+# ─── Output (v4+: silent on success; surface ONLY problems) ───
 # v3.0 forced Claude to render a full marketing banner as its first output every
-# session. v4 runs the self-test silently and only speaks up when something is wrong.
+# session. v4/v5 run the self-test silently and only speak up when something is wrong.
 if [ $FAIL -gt 0 ] || [ $WARN -gt 0 ]; then
 cat <<EOF
-SUPERBOOST V4 ACTIVE — the boot self-test found issues. Surface these to the user so they can repair the install, then proceed with their request:
+SUPERBOOST V5 ACTIVE (tuned for Claude Fable 5) — the boot self-test found issues. Surface these to the user so they can repair the install, then proceed with their request:
 ${ISSUE_BLOCK}
+${PARA_LINE}
 (Superboost v${SUPERBOOST_VERSION} | ${SELFTEST_ICON} ${PASS}/${TOTAL} checks | RAM ${AVAIL_GB} GB free | ${STATUS})
 EOF
 else
 cat <<EOF
-SUPERBOOST V4 ACTIVE — boot OK (${PASS}/${TOTAL} checks), RAM ${AVAIL_GB} GB free, ${STATUS}. Do NOT render a banner; proceed directly with the user's request.
+SUPERBOOST V5 ACTIVE (tuned for Claude Fable 5) — boot OK (${PASS}/${TOTAL} checks), RAM ${AVAIL_GB} GB free, ${STATUS}. Do NOT render a banner; proceed directly with the user's request.
+${PARA_LINE}  ->  Size sub-agent/Workflow fan-out to this budget (wide when RAM is ample, solo when tight). Fable 5's async sub-agents are dependable: when the budget says "wide", prefer delegate-and-keep-working over spawn-and-block.
 EOF
 fi
 
